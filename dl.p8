@@ -1,8 +1,16 @@
 pico-8 cartridge // http://www.pico-8.com
 version 16
 __lua__
-
+-- consts
 local ground_level = 64
+
+-- globals
+
+local update=0
+local draw=0
+local enemies={}
+local update_count=0
+local xreleased=true
 
 -- player
 local p={
@@ -18,11 +26,22 @@ local p={
  punch_cooloff=0
  }
 
-local enemies={}
-local update_count=0
-
-function draw_char(e)
- spr(e.tile, e.x, e.y, 1, 2, e.flip) 
+-- functions
+function create_enemy(n)
+ srand(n)
+ local e={
+  x=128 + flr(rnd(6000)),
+  y=ground_level,
+  flip=true,
+  tile=4,
+  velx=0,
+  vely=0,
+  punchvelx=0,
+  punchvely=0,
+  id=n,
+  agro=0
+  }
+ return e
 end
 
 function char_logic(c)
@@ -30,15 +49,15 @@ function char_logic(c)
  if c.velx > 0 then c.flip = false end
 
  c.vely += 1 --gravity
- --fritction
+ --friction
  c.punchvelx *= 0.8
- c.punchvely *= 0.8 
+ c.punchvely *= 0.8
 
  c.x += c.velx + c.punchvelx
  c.y += c.vely + c.punchvely
- 
+
  if c.x < 0 then c.x = 0 end
- 
+
  if c.y >= ground_level then
   c.y = ground_level
   c.vely = 0
@@ -62,78 +81,17 @@ function enemy_logic(e)
     e.agro = 64
    end
   end
- end 
-end
-
-function create_enemy(n)
- srand(n)
- local e={
-  x=128 + flr(rnd(6000)),
-  y=ground_level,
-  flip=true, 
-  tile=4,
-  velx=0,
-  vely=0,
-  punchvelx=0,
-  punchvely=0,
-  id=n,
-  agro=0
-  }
- return e
-end
-
-function _init()
- for i=1,120 do
-  local e = create_enemy(i)
-  add(enemies, e)
  end
 end
 
-function _draw() 
- camera(0,0)
- cls(0)
- --print(p.punching)
- --print(p.punch_cooloff)
- --print(btnp(❎))
- print("day 1                @ricotweet")
-
- rectfill(0,32,128,95,7)
- 
- local camx=p.x - 48
- if camx < 0 then camx=0 end
- camera(camx, 0)
- 
- for i=0,20 do
-  map(0,0, i*128,32, 16,16)
- end
- for n=1,#enemies
- do
-  local e = enemies[n]
-  draw_char(e)
-  if e.agro > 0 then
-   spr(36,e.x,e.y-8)
-  end
- end 
- -- draw player
- if p.punching == 0 then 
-  spr(p.tile, p.x, p.y, 1, 2, p.flip) 
- else
-   spr(p.tile, p.x - 2, p.y, 1, 1, p.flip)
-   spr(3, p.x, p.y+8)
- end
- if p.punching > 0 then
- end
-end
-
-local xreleased=true
 function player_logic(p)
  local speed = btn(❎) and 2 or 1
- 
+
  p.velx = 0
- if(btn(⬅️)) then 
+ if(btn(⬅️)) then
   p.velx = -speed
  end
- if(btn(➡️)) then 
+ if(btn(➡️)) then
   p.velx = speed
  end
  if btn(🅾️) and p.y == ground_level then
@@ -145,9 +103,9 @@ function player_logic(p)
   p.punching = 16
   xreleased = false
  end
- 
+
  -- collision
- for n=1,#enemies 
+ for n=1,#enemies
  do
   local e = enemies[n]
   local dx = e.x - p.x
@@ -169,12 +127,12 @@ function player_logic(p)
       end
      end
      nn.agro = 128
-     
+
      --cursor()
      --print(e.id)
      --print(nn.id)
      --stop(2)
-     
+
     else
      if e.agro > 0 then
       p.punchvelx = -15
@@ -182,7 +140,7 @@ function player_logic(p)
     end
    end
   end
- end 
+ end
 
  if p.punching > 0 then
   p.punching -= 1
@@ -192,18 +150,76 @@ function player_logic(p)
  end
 end
 
-function _update()
+function game_update()
  update_count+=1
 
  player_logic(p)
  char_logic(p)
- 
- for n=1,#enemies 
+
+ for n=1,#enemies
  do
   char_logic(enemies[n])
   enemy_logic(enemies[n])
- end 
+ end
+end
 
+function draw_char(e)
+ spr(e.tile, e.x, e.y, 1, 2, e.flip)
+end
+
+function game_draw()
+ camera(0,0)
+ cls(0)
+ --print(p.punching)
+ --print(p.punch_cooloff)
+ --print(btnp(❎))
+ print("day 1                @ricotweet")
+
+ rectfill(0,32,128,95,7)
+
+ local camx=p.x - 48
+ if camx < 0 then camx=0 end
+ camera(camx, 0)
+
+ for i=0,20 do
+  map(0,0, i*128,32, 16,16)
+ end
+ for n=1,#enemies
+ do
+  local e = enemies[n]
+  draw_char(e)
+  if e.agro > 0 then
+   spr(36,e.x,e.y-8)
+  end
+ end
+ -- draw player
+ if p.punching == 0 then
+  spr(p.tile, p.x, p.y, 1, 2, p.flip)
+ else
+   spr(p.tile, p.x - 2, p.y, 1, 1, p.flip)
+   spr(3, p.x, p.y+8)
+ end
+ if p.punching > 0 then
+ end
+end
+
+function _init()
+ for i=1,120 do
+  local e = create_enemy(i)
+  add(enemies, e)
+ end
+
+ update=game_update
+ draw=game_draw
+ update_count=0
+end
+
+function _update()
+ update()
+end
+
+function _draw()
+ draw()
 end
 
 __gfx__
