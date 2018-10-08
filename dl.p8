@@ -43,22 +43,29 @@ function create_enemy(n)
  return e
 end
 
+-- helper function for buttons state
 (function ()
- local released = {0,0,0,0,0,0}
- btnd_update=function ()
+ local state = {0,0,0,0,0,0}
+ btn_update=function ()
   for b=0,6 do
-   if released[b] == 0 and btn(b) then
-    released[b] = 1
-   elseif released[b] == 1 then
-    released[b] = 2
-   elseif released[b] == 2 and not btn(b) then
-    released[b] = 0
+   if state[b] == 0 and btn(b) then
+    state[b] = 1
+   elseif state[b] == 1 then
+    state[b] = 2
+   elseif state[b] == 2 and not btn(b) then
+    state[b] = 3
+   elseif state[b] == 3 then
+    state[b] = 0
    end
   end
  end
 
  btnd=function (b)
-  return released[b] == 1
+  return state[b] == 1
+ end
+
+ btnu=function (b)
+  return state[b] == 3
  end
 end)()
 
@@ -169,7 +176,6 @@ end
 
 function game_update()
  update_count+=1
- btnd_update()
 
  player_logic(p)
  char_logic(p)
@@ -231,6 +237,7 @@ function _init()
 end
 
 function _update()
+ btn_update()
  update()
 end
 
