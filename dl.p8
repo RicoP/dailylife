@@ -10,7 +10,6 @@ local update=0
 local draw=0
 local enemies={}
 local update_count=0
-local xreleased=true
 
 -- player
 local p={
@@ -26,7 +25,7 @@ local p={
  punch_cooloff=0
  }
 
--- functions
+-- helper functions
 function create_enemy(n)
  srand(n)
  local e={
@@ -44,6 +43,26 @@ function create_enemy(n)
  return e
 end
 
+(function ()
+ local released = {0,0,0,0,0,0}
+ btnd_update=function ()
+  for b=0,6 do
+   if released[b] == 0 and btn(b) then
+    released[b] = 1
+   elseif released[b] == 1 then
+    released[b] = 2
+   elseif released[b] == 2 and not btn(b) then
+    released[b] = 0
+   end
+  end
+ end
+
+ btnd=function (b)
+  return released[b] == 1
+ end
+end)()
+
+-- logic functions
 function char_logic(c)
  if c.velx < 0 then c.flip = true end
  if c.velx > 0 then c.flip = false end
@@ -97,11 +116,9 @@ function player_logic(p)
  if btn(🅾️) and p.y == ground_level then
   p.vely = -10 -- jump
  end
- if not btn(❎) then xreleased = true end
- if btn(❎) and xreleased and p.punch_cooloff == 0 then
+ if btnd(❎) and p.punch_cooloff == 0 then
   p.punch_cooloff = 64
   p.punching = 16
-  xreleased = false
  end
 
  -- collision
@@ -152,6 +169,7 @@ end
 
 function game_update()
  update_count+=1
+ btnd_update()
 
  player_logic(p)
  char_logic(p)
@@ -163,6 +181,7 @@ function game_update()
  end
 end
 
+-- draw functions
 function draw_char(e)
  spr(e.tile, e.x, e.y, 1, 2, e.flip)
 end
@@ -170,9 +189,6 @@ end
 function game_draw()
  camera(0,0)
  cls(0)
- --print(p.punching)
- --print(p.punch_cooloff)
- --print(btnp(❎))
  print("day 1                @ricotweet")
 
  rectfill(0,32,128,95,7)
