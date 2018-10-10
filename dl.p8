@@ -5,7 +5,6 @@ __lua__
 local ground_level = 64
 
 -- globals
-
 local update=0
 local draw=0
 local enemies={}
@@ -27,6 +26,11 @@ local p={
  punch_cooloff=0
  }
 
+-- utils
+function closure(f)
+ f()
+end
+
 -- helper functions
 function create_enemy(n)
  srand(n)
@@ -46,7 +50,7 @@ function create_enemy(n)
 end
 
 -- helper function for buttons state
-(function ()
+closure(function ()
  local state = {0,0,0,0,0,0}
  btn_update=function ()
   for b=0,6 do
@@ -69,190 +73,191 @@ end
  btnu=function (b)
   return state[b] == 3
  end
-end)()
+end)
 
--- logic functions
-function char_logic(c)
- if c.velx < 0 then c.flip = true end
- if c.velx > 0 then c.flip = false end
-
- c.vely += 1 --gravity
- --friction
- c.punchvelx *= 0.8
- c.punchvely *= 0.8
-
- c.x += c.velx + c.punchvelx
- c.y += c.vely + c.punchvely
-
- if c.x < 0 then c.x = 0 end
-
- if c.y >= ground_level then
-  c.y = ground_level
-  c.vely = 0
- end
-end
-
-function enemy_logic(e)
- if e.tick == nil then e.tick = 0 end
- if e.agro > 0 then
-  e.velx = sgn(p.x - e.x) * 1.5
-  e.agro -= 1
- else
-  srand(update_count+e.id*1000)
-  local r = flr(rnd(16))
-  if r == 0 then e.velx = -0.5 end
-  if r == 1 then e.velx = 0.5 end
-  if r > 12 then e.velx = 0 end
-  local dx = abs(p.x - e.x)
-  if dx < 64 then
-   if flr(rnd(300)) == 0 then
-    e.agro = 64
-   end
+-- game logic
+closure(function ()
+ function char_logic(c)
+  if c.velx < 0 then c.flip = true end
+  if c.velx > 0 then c.flip = false end
+ 
+  c.vely += 1 --gravity
+  --friction
+  c.punchvelx *= 0.8
+  c.punchvely *= 0.8
+ 
+  c.x += c.velx + c.punchvelx
+  c.y += c.vely + c.punchvely
+ 
+  if c.x < 0 then c.x = 0 end
+ 
+  if c.y >= ground_level then
+   c.y = ground_level
+   c.vely = 0
   end
  end
-end
-
-function next_stage()
- day += 1
-
-end
-
-function player_logic(p)
- local speed = btn(❎) and 2 or 1
-
- p.velx = 0
- if(btn(⬅️)) then
-  p.velx = -speed
- end
- if(btn(➡️)) then
-  p.velx = speed
- end
- if btn(🅾️) and p.y == ground_level then
-  p.vely = -10 -- jump
- end
- if btnd(❎) and p.punch_cooloff == 0 then
-  p.punch_cooloff = 64
-  p.punching = 16
- end
-
- -- collision
- for n=1,#enemies
- do
-  local e = enemies[n]
-  local dx = e.x - p.x
-  local dy = e.y - p.y
-  if dx > -8 and dx < 8 then
-   if dy > -16 and dy < 16 then
-    if p.punching > 0 then
-     e.punchvelx = 15
-     e.agro = 128
-     --get neighbour
-     local nn = enemies[1]
-     for m=2,#enemies
-     do
-      local ndx = abs(e.x - nn.x)
-      if e != nn then
-       if ndx > abs(e.x - enemies[m].x) then
-        nn = enemies[m]
-       end
-      end
-     end
-     nn.agro = 128
-
-     --cursor()
-     --print(e.id)
-     --print(nn.id)
-     --stop(2)
-
-    else
-     if e.agro > 0 then
-      p.punchvelx = -15
-     end
+ 
+ function enemy_logic(e)
+  if e.tick == nil then e.tick = 0 end
+  if e.agro > 0 then
+   e.velx = sgn(p.x - e.x) * 1.5
+   e.agro -= 1
+  else
+   srand(update_count+e.id*1000)
+   local r = flr(rnd(16))
+   if r == 0 then e.velx = -0.5 end
+   if r == 1 then e.velx = 0.5 end
+   if r > 12 then e.velx = 0 end
+   local dx = abs(p.x - e.x)
+   if dx < 64 then
+    if flr(rnd(300)) == 0 then
+     e.agro = 64
     end
    end
   end
  end
-
- -- punch cooloff
- if p.punching > 0 then
-  p.punching -= 1
+ 
+ function next_stage()
+  day += 1
  end
- if p.punch_cooloff > 0 then
-  p.punch_cooloff -= 1
- end
-end
-
-function game_update()
- update_count+=1
-
- player_logic(p)
- char_logic(p)
-
- for n=1,#enemies
- do
-  char_logic(enemies[n])
-  enemy_logic(enemies[n])
- end
-
-  -- player at exit
- if p.x >= exit_pos then
-  next_stage()
- end
-end
-
--- draw functions
-function draw_char(e)
- spr(e.tile, e.x, e.y, 1, 2, e.flip)
-end
-
-function game_draw()
- cls(0)
- camera(0,0)
- print("day " .. tostr(day))
- cursor(89,0)
- print("@ricotweet")
-
- rectfill(0,32,128,95,7)
-
- local camx=p.x - 48
- if camx < 0 then camx=0 end
- camera(camx, 0)
-
- for i=0,20 do
-  map(0,0, i*128,32, 16,16)
- end
-
- -- draw exit
- spr(9,exit_pos,56,2,3) 
-
- for n=1,#enemies
- do
-  local e = enemies[n]
-  draw_char(e)
-  if e.agro > 0 then
-   spr(36,e.x,e.y-8)
+ 
+ function player_logic(p)
+  local speed = btn(❎) and 2 or 1
+ 
+  p.velx = 0
+  if(btn(⬅️)) then
+   p.velx = -speed
+  end
+  if(btn(➡️)) then
+   p.velx = speed
+  end
+  if btn(🅾️) and p.y == ground_level then
+   p.vely = -10 -- jump
+  end
+  if btnd(❎) and p.punch_cooloff == 0 then
+   p.punch_cooloff = 64
+   p.punching = 16
+  end
+ 
+  -- collision
+  for n=1,#enemies
+  do
+   local e = enemies[n]
+   local dx = e.x - p.x
+   local dy = e.y - p.y
+   if dx > -8 and dx < 8 then
+    if dy > -16 and dy < 16 then
+     if p.punching > 0 then
+      e.punchvelx = 15
+      e.agro = 128
+      --get neighbour
+      local nn = enemies[1]
+      for m=2,#enemies
+      do
+       local ndx = abs(e.x - nn.x)
+       if e != nn then
+        if ndx > abs(e.x - enemies[m].x) then
+         nn = enemies[m]
+        end
+       end
+      end
+      nn.agro = 128
+ 
+      --cursor()
+      --print(e.id)
+      --print(nn.id)
+      --stop(2)
+ 
+     else
+      if e.agro > 0 then
+       p.punchvelx = -15
+      end
+     end
+    end
+   end
+  end
+ 
+  -- punch cooloff
+  if p.punching > 0 then
+   p.punching -= 1
+  end
+  if p.punch_cooloff > 0 then
+   p.punch_cooloff -= 1
   end
  end
- -- draw player
- if p.punching == 0 then
-  spr(p.tile, p.x, p.y, 1, 2, p.flip)
- else
-   spr(p.tile, p.x - 2, p.y, 1, 1, p.flip)
-   spr(3, p.x, p.y+8)
+ 
+ game_update=function ()
+  update_count+=1
+ 
+  player_logic(p)
+  char_logic(p)
+ 
+  for n=1,#enemies
+  do
+   char_logic(enemies[n])
+   enemy_logic(enemies[n])
+  end
+ 
+   -- player at exit
+  if p.x >= exit_pos then
+   next_stage()
+  end
  end
- if p.punching > 0 then
+ 
+ -- draw functions
+ function draw_char(e)
+  spr(e.tile, e.x, e.y, 1, 2, e.flip)
  end
-end
-
-function game_init()
- for i=1,90 do
-  local e = create_enemy(i)
-  add(enemies, e)
+ 
+ game_draw=function ()
+  cls(0)
+  camera(0,0)
+  print("day " .. tostr(day))
+  cursor(89,0)
+  print("@ricotweet")
+ 
+  rectfill(0,32,128,95,7)
+ 
+  local camx=p.x - 48
+  if camx < 0 then camx=0 end
+  camera(camx, 0)
+ 
+  for i=0,20 do
+   map(0,0, i*128,32, 16,16)
+  end
+ 
+  -- draw exit
+  spr(9,exit_pos,56,2,3) 
+ 
+  for n=1,#enemies
+  do
+   local e = enemies[n]
+   draw_char(e)
+   if e.agro > 0 then
+    spr(36,e.x,e.y-8)
+   end
+  end
+  -- draw player
+  if p.punching == 0 then
+   spr(p.tile, p.x, p.y, 1, 2, p.flip)
+  else
+    spr(p.tile, p.x - 2, p.y, 1, 1, p.flip)
+    spr(3, p.x, p.y+8)
+  end
+  if p.punching > 0 then
+  end
  end
-
- update_count=0
-end
-
+ 
+ game_init=function ()
+  for i=1,90 do
+   local e = create_enemy(i)
+   add(enemies, e)
+  end
+ 
+  update_count=0
+ end
+end)
+ 
 function _init()
  update=game_update
  draw=game_draw
