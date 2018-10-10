@@ -26,11 +26,6 @@ local p={
  punch_cooloff=0
  }
 
--- utils
-function closure(f)
- f()
-end
-
 -- helper functions
 function create_enemy(n)
  srand(n)
@@ -50,7 +45,7 @@ function create_enemy(n)
 end
 
 -- helper function for buttons state
-closure(function ()
+do
  local state = {0,0,0,0,0,0}
  btn_update=function ()
   for b=0,6 do
@@ -73,10 +68,10 @@ closure(function ()
  btnu=function (b)
   return state[b] == 3
  end
-end)
+end
 
 -- game logic
-closure(function ()
+do
  function char_logic(c)
   if c.velx < 0 then c.flip = true end
   if c.velx > 0 then c.flip = false end
@@ -256,8 +251,8 @@ closure(function ()
  
   update_count=0
  end
-end)
- 
+end
+
 function _init()
  update=game_update
  draw=game_draw
