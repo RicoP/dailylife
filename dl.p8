@@ -149,24 +149,10 @@ do
      if p.punching > 0 then
       e.punchvelx = 15
       e.agro = 128
-      --get neighbour
-      local nn = enemies[1]
-      for m=2,#enemies
-      do
-       local ndx = abs(e.x - nn.x)
-       if e != nn then
-        if ndx > abs(e.x - enemies[m].x) then
-         nn = enemies[m]
-        end
-       end
+      local neighbour = enemies[n+1]
+      if neighbour then
+       neighbour.agro = 128
       end
-      nn.agro = 128
- 
-      --cursor()
-      --print(e.id)
-      --print(nn.id)
-      --stop(2)
- 
      else
       if e.agro > 0 then
        p.punchvelx = -15
