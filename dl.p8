@@ -1,48 +1,11 @@
 pico-8 cartridge // http://www.pico-8.com
 version 16
 __lua__
--- consts
-local ground_level = 64
-
 -- globals
 local update=0
 local draw=0
 local enemies={}
 local update_count=0
-local exit_pos=88
-local day=1
-
--- player
-local p={
- x=0,
- y=ground_level,
- flip=false,
- tile=1,
- velx=0,
- vely=0,
- punchvelx=0,
- punchvely=0,
- punching=0,
- punch_cooloff=0
- }
-
--- helper functions
-function create_enemy(n)
- srand(n)
- local e={
-  x=128 + flr(rnd(6000)),
-  y=ground_level,
-  flip=true,
-  tile=4,
-  velx=0,
-  vely=0,
-  punchvelx=0,
-  punchvely=0,
-  id=n,
-  agro=0
-  }
- return e
-end
 
 -- helper function for buttons state
 do
@@ -68,10 +31,51 @@ do
  btnu=function (b)
   return state[b] == 3
  end
+ --https://www.lexaloffle.com/bbs/?pid=18374#p18374
+ qsort=function (t, cmp, i, j)
+  i = i or 1
+  j = j or #t
+  if i < j then
+   local p = i
+   for k = i, j - 1 do
+    if cmp(t[k], t[j]) <= 0 then
+     t[p], t[k] = t[k], t[p]
+     p = p + 1
+    end
+   end
+   t[p], t[j] = t[j], t[p]
+   qsort(t, cmp, i, p - 1)
+   qsort(t, cmp, p + 1, j)  
+  end
+ end
 end
 
 -- game logic
 do
+ local ground_level = 64
+ local exit_pos=88
+ local day=1
+ -- player
+ local p={
+  }
+
+ function create_enemy(n)
+  srand(n)
+  local e={
+   x=128 + flr(rnd(6000)),
+   y=ground_level,
+   flip=true,
+   tile=4,
+   velx=0,
+   vely=0,
+   punchvelx=0,
+   punchvely=0,
+   id=n,
+   agro=0
+   }
+  return e
+ end
+
  function char_logic(c)
   if c.velx < 0 then c.flip = true end
   if c.velx > 0 then c.flip = false end
@@ -180,6 +184,36 @@ do
    p.punch_cooloff -= 1
   end
  end
+
+ function draw_char(e)
+  spr(e.tile, e.x, e.y, 1, 2, e.flip)
+ end
+  
+ game_init=function ()
+  p={
+   x=0,
+   y=ground_level,
+   flip=false,
+   tile=1,
+   velx=0,
+   vely=0,
+   punchvelx=0,
+   punchvely=0,
+   punching=0,
+   punch_cooloff=0
+   }
+  enemies={}
+  for i=1,90 do
+   local e = create_enemy(i)
+   add(enemies, e)
+  end
+  -- sort by x position
+  qsort(enemies,function (l,r)
+   return l.x - r.x
+  end)
+  
+  update_count=0
+ end
  
  game_update=function ()
   update_count+=1
@@ -198,12 +232,7 @@ do
    next_stage()
   end
  end
- 
- -- draw functions
- function draw_char(e)
-  spr(e.tile, e.x, e.y, 1, 2, e.flip)
- end
- 
+
  game_draw=function ()
   cls(0)
   camera(0,0)
@@ -241,15 +270,6 @@ do
   end
   if p.punching > 0 then
   end
- end
- 
- game_init=function ()
-  for i=1,90 do
-   local e = create_enemy(i)
-   add(enemies, e)
-  end
- 
-  update_count=0
  end
 end
 
