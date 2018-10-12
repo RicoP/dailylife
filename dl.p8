@@ -130,6 +130,28 @@ do
   day += 1
  end
  
+ function check_player_enemy_collision()
+  local e = enemies[1] -- closest enemy
+  local n = enemies[2] -- neighbour
+  local dx = e.x - p.x
+  local dy = e.y - p.y
+  if dx > -8 and dx < 8 then
+   if dy > -16 and dy < 16 then
+    if p.punching > 0 then
+     -- punch enemy
+     e.punchvelx = 15
+     e.agro = 128
+     n.agro = 128
+    else
+     -- get punched
+     if e.agro > 0 then
+      p.punchvelx = -15
+     end
+    end
+   end
+  end
+ end
+ 
  function player_logic(p)
   local speed = btn(❎) and 2 or 1
  
@@ -148,29 +170,7 @@ do
    p.punching = 16
   end
  
-  -- collision
-  for n=1,#enemies
-  do
-   local e = enemies[n]
-   local dx = e.x - p.x
-   local dy = e.y - p.y
-   if dx > -8 and dx < 8 then
-    if dy > -16 and dy < 16 then
-     if p.punching > 0 then
-      e.punchvelx = 15
-      e.agro = 128
-      local neighbour = enemies[n+1]
-      if neighbour then
-       neighbour.agro = 128
-      end
-     else
-      if e.agro > 0 then
-       p.punchvelx = -15
-      end
-     end
-    end
-   end
-  end
+  check_player_enemy_collision()
  
   -- punch cooloff
   if p.punching > 0 then
@@ -224,7 +224,7 @@ do
    char_logic(enemies[n])
    enemy_logic(enemies[n])
   end
- 
+  sort_enemies()
    -- player at exit
   if p.x >= exit_pos then
    next_stage()
