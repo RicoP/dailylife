@@ -67,6 +67,9 @@ end
 
 -- menu logic
 do
+ function print_centered(str, y)
+  print(str, 64 - (#str * 2), y) 
+ end
  menu_init=function ()
   menu_time=200
   update=function()
@@ -79,10 +82,12 @@ do
    rectfill(1,1,126,126,0)
    color(7)
    
-   cursor(2,40)
-   print("          daily life")
-   print("             day " .. tostr(day))
-   print("       press ❎ to start")
+   cursor(0,40)
+   print_centered("daily life", 40)
+   print_centered("day " .. tostr(day), 48)
+   print_centered("press ❎ to start", 56)
+   print_centered("❎ = jump", 64)
+   print_centered("🅾️ = kick", 72)
   end
  end
 end
