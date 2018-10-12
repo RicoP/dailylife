@@ -7,6 +7,7 @@ local draw=0
 local enemies={}
 local p={} -- player
 local update_count=0
+local day=1
 
 -- helper function for buttons state
 do
@@ -50,12 +51,13 @@ do
   end
  end
  
- frnd=function(n)
+ frnd=function (n)
   return flr(rnd(n))
  end
 
  sort_enemies=function () 
   qsort(enemies, function (l,r)
+   -- sort by distance to player
    local dl = abs(p.x-l.x)
    local dr = abs(p.x-r.x)
    return dl - dr
@@ -63,11 +65,32 @@ do
  end
 end
 
+-- menu logic
+do
+ menu_init=function ()
+  menu_time=200
+  update=function()
+   if btnd(❎) then
+    game_init()
+   end
+  end
+  draw=function ()
+   cls(9)
+   rectfill(1,1,126,126,0)
+   color(7)
+   
+   cursor(2,40)
+   print("          daily life")
+   print("             day " .. tostr(day))
+   print("       press ❎ to start")
+  end
+ end
+end
+
 -- game logic
 do
  local ground_level = 64
  local exit_pos=88
- local day=1
 
  function create_enemy(n)
   srand(n)
@@ -113,6 +136,7 @@ do
    e.velx = sgn(p.x - e.x) * v
    e.agro -= 1
   else
+   -- idle
    local r = frnd(16)
    if r == 0 then e.velx = -0.5 end
    if r == 1 then e.velx = 0.5 end
@@ -211,6 +235,8 @@ do
   end
   
   update_count=0
+  update=game_update
+  draw=game_draw
  end
  
  game_update=function ()
@@ -271,9 +297,7 @@ end
 
 -- system intern stuff
 function _init()
- update=game_update
- draw=game_draw
- game_init()
+ menu_init()
 end
 
 function _update()
