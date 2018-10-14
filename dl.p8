@@ -8,6 +8,7 @@ local enemies={}
 local p={} -- player
 local update_count=0
 local day=1
+local wayback=false
 
 -- helper function for buttons state
 do
@@ -75,6 +76,7 @@ do
   update=function()
    if btnd(❎) then
     game_init()
+    game_start()
    end
   end
   draw=function ()
@@ -99,7 +101,7 @@ do
   update=function ()
    class_time-=1
    if class_time == 0 then
-    game_init()
+    game_start()
    end
   end
   
@@ -122,7 +124,7 @@ do
  local exit_pos=88
 
  function create_enemy(n)
-  srand(n)
+  srand(n + day*100)
   local e={
    x=128 + frnd(6000),
    y=ground_level,
@@ -180,7 +182,13 @@ do
  end
  
  function next_stage()
-  day += 1
+  if wayback then
+   day += 1
+   wayback = false
+   game_init()
+  else
+   wayback = true
+  end
   class_init()
  end
  
@@ -238,7 +246,22 @@ do
  function draw_char(e)
   spr(e.tile, e.x, e.y, 1, 2, e.flip)
  end
-  
+
+ game_start=function ()
+  update=game_update
+  draw=game_draw 
+ end
+
+ reset_enemies=function ()
+  enemies={}
+  for i=1,90 do
+   local e = create_enemy(i)
+   add(enemies, e)
+  end
+
+  sort_enemies()
+ end
+
  game_init=function ()
   p={
    x=0,
@@ -252,21 +275,16 @@ do
    punching=0,
    punch_cooloff=0
    }
-  enemies={}
-  for i=1,90 do
-   local e = create_enemy(i)
-   add(enemies, e)
-  end
 
-  sort_enemies()
-  
+  reset_enemies() 
+
   for i=1,#enemies do
    printh(tostr(enemies[i].id))
   end
   
   update_count=0
-  update=game_update
-  draw=game_draw
+  srand(day)
+  exit_pos=88+256+128*frnd(3)  
  end
  
  game_update=function ()
@@ -282,7 +300,10 @@ do
   end
   sort_enemies()
    -- player at exit
-  if p.x >= exit_pos then
+  if p.x >= exit_pos and not wayback then
+   next_stage()
+  end
+  if p.x == 0 and wayback then
    next_stage()
   end
  end
@@ -298,15 +319,21 @@ do
  
   local camx=p.x - 48
   if camx < 0 then camx=0 end
+  if camx > exit_pos then camx=exit_pos end
   camera(camx, 0)
  
   for i=0,20 do
    map(0,0, i*128,32, 16,16)
+   print(tostr(101+i),i*128+90,50,6)
   end
  
   -- draw exit
   spr(9,exit_pos,56,2,3) 
  
+  if (update_count % 20) < 10 then
+   spr(3,exit_pos + 96,32,2,1,true)
+  end
+
   for n=1,#enemies
   do
    local e = enemies[n]
@@ -319,8 +346,13 @@ do
   if p.punching == 0 then
    spr(1, p.x, p.y, 1, 2, p.flip)
   else
-   spr(1, p.x - 2, p.y, 1, 1, p.flip)
-   spr(18, p.x, p.y+8)
+   if not wayback then
+    spr(1, p.x - 2, p.y, 1, 1, p.flip)
+    spr(18, p.x, p.y+8, 1, 1, false)
+   else
+    spr(1, p.x + 2, p.y, 1, 1, p.flip)
+    spr(18, p.x, p.y+8, 1, 1, true)
+   end
   end
  end
 end
@@ -341,13 +373,13 @@ end
 
 __gfx__
 00000000000000000000000000000000000000005555555555555555aaaaaaaaaaaaaaaa99999999999999990000000000000000000000000000000000000000
-0000000000bbbb000000000000000000000000005555555555555555aaaaaaaaaaaaaaaa97777755ccccccc90001111000022220000888800003333000022220
-007007000bbbbbb000000000000000000000000055ccccc55ccccc55aaaaaaaaaaaaaaaa97777755ccccccc90011111100222222008888880033333300222222
-00077000bbbfffb000000000000000000000000055ccccc55ccccc55aa111111111aaaaa97777755ccccccc901114441022277720888fff8033344430222fff2
-00077000bbf1f10000000000000000000000000055ccccc55ccccc55aa1fffffff1aaaaa97777755ccccccc90114545002271710088f1f1003341410022f1f10
-007007000bffff000000000000000000000000005555555555555555aa1fffffff1aaaaa97777755ccccccc90014444000277770008ffff000344440002ffff0
-0000000000666600dddddddd00000000000000005555555555555555aa1fffffff1aaaaa9777775555555559000dddd000055550000222200001111000044440
-000000000066660000000d00000000000000000055ccccc55ccccc55aa1fffffff1aaaaa9777777777777779000dddd000055550000222200001111000044440
+0000000000bbbb000000000000000000000800005555555555555555aaaaaaaaaaaaaaaa97777755ccccccc90001111000022220000888800003333000022220
+007007000bbbbbb000000000000000000008800055ccccc55ccccc55aaaaaaaaaaaaaaaa97777755ccccccc90011111100222222008888880033333300222222
+00077000bbbfffb000000000008888888888880055ccccc55ccccc55aa111111111aaaaa97777755ccccccc901114441022277720888fff8033344430222fff2
+00077000bbf1f10000000000008888888888888055ccccc55ccccc55aa1fffffff1aaaaa97777755ccccccc90114545002271710088f1f1003341410022f1f10
+007007000bffff000000000000888888888888005555555555555555aa1fffffff1aaaaa97777755ccccccc90014444000277770008ffff000344440002ffff0
+0000000000666600dddddddd00000000000880005555555555555555aa1fffffff1aaaaa9777775555555559000dddd000055550000222200001111000044440
+000000000066660000000d00000000000008000055ccccc55ccccc55aa1fffffff1aaaaa9777777777777779000dddd000055550000222200001111000044440
 666666660066660066660000000000000000000055ccccc55ccccc55aa1fffffff1aaaaa9777777777777779000dddd000055550000222200001111000044440
 666666660066660066660000000000000000000055ccccc55ccccc55aa1fffffff1aaaaa9777777777777779000dddd000055550000222200001111000044440
 66666666006666006666000300000000000000005555555555555555aa1fffffff1aaaaa9777777777777779000dddd000055550000222200001111000044440
