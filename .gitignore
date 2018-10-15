@@ -1,5 +1,8 @@
 # Compiled Lua sources
 luac.out
+*.html
+*.js
+*.zip
 
 # luarocks build files
 *.src.rock
