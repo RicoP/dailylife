@@ -229,7 +229,7 @@ do
   if(btn(➡️)) then
    p.velx = speed
   end
-  if btn(🅾️) and p.y == ground_level then
+  if (btn(🅾️) or btn(⬆️)) and p.y == ground_level then
    p.vely = -10 -- jump
   end
   if btnd(❎) and p.punch_cooloff == 0 then
