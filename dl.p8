@@ -115,6 +115,9 @@ do
    rectfill(0,96,128,128,0)
   end
   
+  for i=1,#enemies do
+   enemies[i].agro = 0
+  end
  end
 end
 
@@ -151,8 +154,6 @@ do
  
   c.x += c.velx + c.punchvelx
   c.y += c.vely + c.punchvely
- 
-  if c.x < 0 then c.x = 0 end
  
   if c.y >= ground_level then
    c.y = ground_level
@@ -201,18 +202,22 @@ do
    if dy > -16 and dy < 16 then
     if p.punching > 0 then
      -- punch enemy
-     e.punchvelx = 15
+     e.punchvelx = wayback and -15 or 15
      e.agro = 128
      n.agro = 128
     else
      -- get punched
      if e.agro > 0 then
-      p.punchvelx = -15
+      p.punchvelx = wayback and 15 or -15
      end
     end
    end
   end
  end
+
+	function player_max()
+	 return exit_pos + 120
+	end
  
  function player_logic(p)
   local speed = btn(❎) and 2 or 1
@@ -241,6 +246,9 @@ do
   if p.punch_cooloff > 0 then
    p.punch_cooloff -= 1
   end
+  
+  if(p.x < 0) p.x = 0
+  if(p.x > player_max()) p.x = player_max()
  end
 
  function draw_char(e)
@@ -295,15 +303,19 @@ do
  
   for n=1,#enemies
   do
-   char_logic(enemies[n])
-   enemy_logic(enemies[n])
+   local e = enemies[n]
+   if e.x < 20 + player_max() then
+    -- ignore enemies which are outside out range
+    char_logic(e)
+    enemy_logic(e)
+   end
   end
   sort_enemies()
    -- player at exit
   if p.x >= exit_pos and not wayback then
    next_stage()
   end
-  if p.x == 0 and wayback then
+  if p.x <= 0 and wayback then
    next_stage()
   end
  end
