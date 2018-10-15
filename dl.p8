@@ -340,7 +340,9 @@ do
   end
  
   -- draw exit
-  spr(9,exit_pos,56,2,3) 
+  if not wayback then
+   spr(9,exit_pos,56,2,3) 
+  end
  
   if (update_count % 20) < 10 then
    spr(3,exit_pos + 96,32,2,1,true)
