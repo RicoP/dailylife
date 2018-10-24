@@ -220,7 +220,7 @@ do
 	end
  
  function player_logic(p)
-  local speed = btn(❎) and 2 or 1
+  local speed = 2
  
   p.velx = 0
   if(btn(⬅️)) then
